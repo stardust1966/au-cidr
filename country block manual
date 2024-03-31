@@ -1,0 +1,52 @@
+ #### блок по странам #####
+1)
+apt install ipset
+ipset create countries hash:net
+mkdir /root/ipset
+cd /root/ipset
+touch /root/ipset/ban-ip-countries.sh
+chmod +x /root/ipset/ban-ip-countries.sh
+
+
+2)
+nano /root/ipset/ban-ip-countries.sh :
+##################
+################## idea from https://mtxserv.com/vps-server/doc/how-to-block-ip-addresses-by-country
+COUNTRIES=('au')
+
+ipset flush countries
+
+for i in "${COUNTRIES[@]}"; do
+    echo "Ban IP of country ${i}"
+
+    for IP in $(wget -O - https://www.ipdeny.com/ipblocks/data/countries/${i}.zone)
+    do
+        ipset add countries $IP
+    done
+done
+##################
+Alternative:     https://raw.githubusercontent.com/stardust1966/au-cidr/main/au-cidr.txt
+##################
+
+
+3)
+bash ban-ip-countries.sh
+touch /root/iptables.sh
+chmod +x /root/iptables.sh
+
+
+4) nano /root/iptables.sh :
+#########################
+iptables -F
+iptables -X
+
+iptables -I INPUT -p tcp --match multiport --dports 80,443  -m set ! --match-set countries src -j DROP
+#########################
+
+5) bash /root/iptables.sh
+
+
+
+  6) additional ips:
+iptables -A INPUT -s 124.254.96.0/19 -j DROP
+  
